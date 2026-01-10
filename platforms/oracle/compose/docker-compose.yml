@@ -1,0 +1,59 @@
+version: '3.8'
+
+# This Compose file runs the missing Agent‑Matrix services on an Oracle VM.
+# It is intentionally minimal: Matrix Hub and the database are assumed to be
+# running elsewhere.  Environment variables are loaded from the adjacent `.env`
+# file.  Copy `.env.example` to `.env` and fill in your secrets before
+# starting the stack.
+
+services:
+  matrix-ai:
+    image: ghcr.io/agent-matrix/matrix-ai:latest
+    container_name: matrix-ai
+    restart: unless-stopped
+    environment:
+      PROVIDER_ORDER: ${PROVIDER_ORDER}
+      OLLAMA_HOST: ${OLLAMA_HOST}
+      OLLAMA_MODEL: ${OLLAMA_MODEL}
+      GROQ_API_KEY: ${GROQ_API_KEY}
+      GROQ_MODEL: ${GROQ_MODEL}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+      GEMINI_MODEL: ${GEMINI_MODEL}
+      HF_TOKEN: ${HF_TOKEN}
+      HF_MODEL: ${HF_MODEL}
+      ADMIN_TOKEN: ${ADMIN_TOKEN}
+    ports:
+      - "7860:7860"
+    depends_on:
+      - ollama
+
+  matrix-guardian:
+    image: ghcr.io/agent-matrix/matrix-guardian:latest
+    container_name: matrix-guardian
+    restart: unless-stopped
+    environment:
+      MATRIXHUB_API_BASE: ${MATRIXHUB_API_BASE}
+      MATRIX_AI_BASE: ${MATRIX_AI_BASE}
+      API_TOKEN: ${ADMIN_TOKEN}
+      DATABASE_URL: ${GUARDIAN_DATABASE_URL}
+      AUTOPILOT_ENABLED: ${AUTOPILOT_ENABLED}
+      AUTOPILOT_INTERVAL_SEC: ${AUTOPILOT_INTERVAL_SEC}
+    ports:
+      - "8001:8001"
+    volumes:
+      - guardian-db:/data
+
+  # Optional: run a local Ollama instance for LLM inference.
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    restart: unless-stopped
+    environment:
+      OLLAMA_MODELS: ${OLLAMA_MODEL}
+    ports:
+      - "11434:11434"
+    command: ["bash", "-c", "ollama serve"]
+
+volumes:
+  guardian-db:
+    driver: local

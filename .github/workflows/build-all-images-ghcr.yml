@@ -1,0 +1,186 @@
+name: 📦 Build & Publish All Agent-Matrix Images (GHCR)
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release tag (e.g., v1.2.3 or 1.2.3). Optional for manual runs."
+        required: false
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: ghcr-publish-all
+  cancel-in-progress: true
+
+jobs:
+  build-and-push:
+    name: Build & Push (${{ matrix.repo }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Core backends
+          - repo: matrix-hub
+            git: https://github.com/agent-matrix/matrix-hub.git
+            image: matrix-hub
+            context: .
+            dockerfile: Dockerfile
+          - repo: matrix-guardian
+            git: https://github.com/agent-matrix/matrix-guardian.git
+            image: matrix-guardian
+            context: .
+            dockerfile: Dockerfile
+          - repo: matrix-ai
+            git: https://github.com/agent-matrix/matrix-ai.git
+            image: matrix-ai
+            context: .
+            dockerfile: Dockerfile
+          - repo: matrix-architect
+            git: https://github.com/agent-matrix/matrix-architect.git
+            image: matrix-architect
+            context: .
+            dockerfile: Dockerfile
+          - repo: matrix-treasury
+            git: https://github.com/agent-matrix/matrix-treasury.git
+            image: matrix-treasury
+            context: .
+            dockerfile: Dockerfile
+
+          # UIs
+          - repo: matrix-hub-admin
+            git: https://github.com/agent-matrix/matrix-hub-admin.git
+            image: matrix-hub-admin
+            context: .
+            dockerfile: Dockerfile
+          - repo: network.matrixhub
+            git: https://github.com/agent-matrix/network.matrixhub.git
+            image: network.matrixhub
+            context: .
+            dockerfile: Dockerfile
+          - repo: a2a-validator
+            git: https://github.com/agent-matrix/a2a-validator.git
+            image: a2a-validator
+            context: .
+            dockerfile: Dockerfile
+
+    steps:
+      - name: Derive release version
+        id: version
+        shell: bash
+        run: |
+          RAW=""
+          if [ "${{ github.event_name }}" = "release" ]; then
+            RAW="${GITHUB_REF#refs/tags/}"
+          else
+            RAW="${{ github.event.inputs.version }}"
+          fi
+
+          # Allow running without explicit version on workflow_dispatch
+          if [ -z "$RAW" ]; then
+            SEMVER="dev"
+            RELEASE_TAG="dev"
+          else
+            if [[ "$RAW" =~ ^v ]]; then
+              RELEASE_TAG="$RAW"
+              SEMVER="${RAW#v}"
+            else
+              RELEASE_TAG="v$RAW"
+              SEMVER="$RAW"
+            fi
+          fi
+
+          echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_ENV
+          echo "SEMVER=$SEMVER" >> $GITHUB_ENV
+          echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
+          echo "BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_ENV
+          echo "Resolved RELEASE_TAG=${RELEASE_TAG}, SEMVER=${SEMVER}, SHORT_SHA=${GITHUB_SHA::7}"
+
+      - name: Set up QEMU (multi-arch)
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: GHCR login
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Checkout source repo (${{ matrix.repo }})
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --depth 1 "${{ matrix.git }}" src
+
+      - name: Validate Dockerfile exists
+        id: df
+        shell: bash
+        run: |
+          set -euo pipefail
+          DF="src/${{ matrix.dockerfile }}"
+          if [ ! -f "$DF" ]; then
+            echo "Dockerfile not found at: $DF"
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Compute image name (lowercase owner)
+        if: steps.df.outputs.skip != 'true'
+        shell: bash
+        run: |
+          OWNER_LC="${GITHUB_REPOSITORY_OWNER,,}"
+          IMAGE="ghcr.io/${OWNER_LC}/${{ matrix.image }}"
+          echo "IMAGE=$IMAGE" >> $GITHUB_ENV
+          echo "Image: $IMAGE"
+
+      - name: Docker metadata (tags & labels)
+        if: steps.df.outputs.skip != 'true'
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE }}
+          flavor: |
+            latest=false
+          tags: |
+            type=raw,value=v${{ env.SEMVER }}
+            type=raw,value=sha-${{ env.SHORT_SHA }}
+            type=raw,value=latest,enable=${{ github.event_name == 'release' }}
+          labels: |
+            org.opencontainers.image.title=${{ matrix.image }}
+            org.opencontainers.image.source=${{ matrix.git }}
+            org.opencontainers.image.version=${{ env.SEMVER }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.created=${{ env.BUILD_DATE }}
+
+      - name: Build & push (${{ matrix.repo }})
+        if: steps.df.outputs.skip != 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: src/${{ matrix.context }}
+          file: src/${{ matrix.dockerfile }}
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            BUILD_VERSION=${{ env.SEMVER }}
+            BUILD_COMMIT=${{ github.sha }}
+            BUILD_DATE=${{ env.BUILD_DATE }}
+
+      - name: Note skipped build
+        if: steps.df.outputs.skip == 'true'
+        run: |
+          echo "## Skipped ${{ matrix.repo }}" >> $GITHUB_STEP_SUMMARY
+          echo "No Dockerfile found at src/${{ matrix.dockerfile }}" >> $GITHUB_STEP_SUMMARY

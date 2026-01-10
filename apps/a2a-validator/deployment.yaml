@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: a2a-validator
+  labels:
+    app: a2a-validator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: a2a-validator
+  template:
+    metadata:
+      labels:
+        app: a2a-validator
+    spec:
+      containers:
+        - name: a2a-validator
+          image: ghcr.io/agent-matrix/a2a-validator:latest
+          ports:
+            - containerPort: 7860
+          env:
+            # No environment variables are required by default.  Optionally set
+            # A2A_SDK=true to enable deeper validations.
+            - name: A2A_SDK
+              value: "false"
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: a2a-validator
+  labels:
+    app: a2a-validator
+spec:
+  type: NodePort
+  selector:
+    app: a2a-validator
+  ports:
+    - port: 7860
+      targetPort: 7860
+      nodePort: 30090
+      protocol: TCP

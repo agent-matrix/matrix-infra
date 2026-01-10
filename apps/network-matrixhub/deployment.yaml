@@ -1,0 +1,100 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: network-matrixhub-backend
+  labels:
+    app: network-matrixhub
+    component: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: network-matrixhub
+      component: backend
+  template:
+    metadata:
+      labels:
+        app: network-matrixhub
+        component: backend
+    spec:
+      containers:
+        - name: network-matrixhub-backend
+          image: ghcr.io/agent-matrix/network.matrixhub-backend:latest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DATABASE_URL
+              value: "sqlite:///network.db"
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: matrix-secrets
+                  key: NETWORK_SECRET_KEY
+            - name: BACKEND_CORS_ORIGINS
+              value: "http://localhost:3000"
+      restartPolicy: Always
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: network-matrixhub-frontend
+  labels:
+    app: network-matrixhub
+    component: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: network-matrixhub
+      component: frontend
+  template:
+    metadata:
+      labels:
+        app: network-matrixhub
+        component: frontend
+    spec:
+      containers:
+        - name: network-matrixhub-frontend
+          image: ghcr.io/agent-matrix/network.matrixhub-frontend:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: NEXT_PUBLIC_BACKEND_URL
+              value: "http://network-matrixhub-backend:8000"
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: network-matrixhub-backend
+  labels:
+    app: network-matrixhub
+    component: backend
+spec:
+  type: NodePort
+  selector:
+    app: network-matrixhub
+    component: backend
+  ports:
+    - port: 8000
+      targetPort: 8000
+      nodePort: 30088
+      protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: network-matrixhub-frontend
+  labels:
+    app: network-matrixhub
+    component: frontend
+spec:
+  type: NodePort
+  selector:
+    app: network-matrixhub
+    component: frontend
+  ports:
+    - port: 3000
+      targetPort: 3000
+      nodePort: 30091
+      protocol: TCP

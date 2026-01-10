@@ -1,0 +1,51 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Namespace for all Agent‑Matrix services when running locally.
+namespace: matrix
+
+resources:
+  - matrix-secrets.yaml
+  # Core services
+  - ../../apps/matrix-hub/deployment.yaml
+  - ../../apps/matrix-ai/deployment.yaml
+  - ../../apps/matrix-guardian/deployment.yaml
+  - ../../apps/matrix-architect/deployment.yaml
+  - ../../apps/matrix-treasury/deployment.yaml
+  - ../../apps/matrix-hub-admin/deployment.yaml
+  - ../../apps/network-matrixhub/deployment.yaml
+  - ../../apps/a2a-validator/deployment.yaml
+
+  # Uncomment the following line to deploy a local Ollama server for LLM inference.
+  # - ollama.yaml
+
+# Generate a ConfigMap for Matrix AI.  These values can be overridden by
+# environment-specific overlays or edited directly here.
+configMapGenerator:
+  - name: matrix-ai-config
+    literals:
+      - PROVIDER_ORDER=ollama
+      - OLLAMA_MODEL=llama3
+
+# Generate a Secret with placeholder values.  **DO NOT USE IN PRODUCTION**.
+# Replace these values via `kubectl create secret` or through an overlay.
+secretGenerator:
+  - name: matrix-secrets
+    literals:
+      - ADMIN_TOKEN=changeme
+      - GROQ_API_KEY=
+      - GOOGLE_API_KEY=
+      - HF_TOKEN=
+      - MCP_GATEWAY_TOKEN=
+      - JWT_SECRET=supersecret
+      - ADMIN_PRIVATE_KEY=
+      - ADMIN_ENCRYPTION_KEY=
+      - OPENAI_API_KEY=
+      - ANTHROPIC_API_KEY=
+      - WATSONX_API_KEY=
+      - NETWORK_SECRET_KEY=
+      - NEXTAUTH_SECRET=
+    type: Opaque
+
+# For local development, you might want to set NodePort ranges or other
+# configuration.  See the individual deployment manifests for port numbers.

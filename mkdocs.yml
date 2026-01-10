@@ -1,0 +1,35 @@
+site_name: Matrix‑Infra Documentation
+site_description: Open infrastructure to deploy and study alive, governed AI systems (Agent‑Matrix).
+repo_url: https://github.com/agent-matrix/matrix-infra
+edit_uri: edit/main/
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.expand
+    - navigation.instant
+    - content.action.edit
+    - content.code.copy
+  icon:
+    repo: fontawesome/brands/github
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - footnotes
+  - toc:
+      permalink: true
+
+nav:
+  - Overview: index.md
+  - Architecture:
+      - System model: architecture.md
+      - Components: components.md
+      - Governance: governance.md
+  - Deployment:
+      - Local MiniKube: quickstart-local-minikube.md
+      - Oracle VM: quickstart-oracle.md
+      - LLM providers: llm-providers.md
+      - Operations: deployment.md
+  - Roadmap: roadmap.md

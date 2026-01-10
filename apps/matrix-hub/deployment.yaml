@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: matrix-hub
+  labels:
+    app: matrix-hub
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: matrix-hub
+  template:
+    metadata:
+      labels:
+        app: matrix-hub
+    spec:
+      containers:
+        - name: matrix-hub
+          image: ghcr.io/agent-matrix/matrix-hub:latest
+          ports:
+            - containerPort: 8000
+          env:
+            # Use SQLite for development; override via secret to point at Postgres.
+            - name: DATABASE_URL
+              value: "sqlite:///matrixhub.db"
+            - name: INIT_DB
+              value: "true"
+            # Remote catalogs to ingest.  Use the public catalog by default.
+            - name: MATRIX_REMOTES
+              value: "https://raw.githubusercontent.com/agent-matrix/catalog/refs/heads/main/index.json"
+            # Interval (minutes) at which to fetch remote manifests.
+            - name: INGEST_INTERVAL_MIN
+              value: "60"
+            # If you have an MCP gateway, specify its URL and token.
+            - name: MCP_GATEWAY_URL
+              value: ""
+            - name: MCP_GATEWAY_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: matrix-secrets
+                  key: MCP_GATEWAY_TOKEN
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: matrix-hub
+  labels:
+    app: matrix-hub
+spec:
+  type: NodePort
+  selector:
+    app: matrix-hub
+  ports:
+    - port: 8000
+      targetPort: 8000
+      nodePort: 30081
+      protocol: TCP

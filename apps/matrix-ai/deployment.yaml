@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: matrix-ai
+  labels:
+    app: matrix-ai
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: matrix-ai
+  template:
+    metadata:
+      labels:
+        app: matrix-ai
+    spec:
+      containers:
+        - name: matrix-ai
+          image: ghcr.io/agent-matrix/matrix-ai:latest
+          ports:
+            - containerPort: 7860
+          env:
+            # Provider cascade for LLMs.  Adjust via kustomize or edit directly.
+            - name: PROVIDER_ORDER
+              value: "ollama"
+            - name: OLLAMA_HOST
+              value: "http://ollama:11434"
+            - name: OLLAMA_MODEL
+              value: "llama3"
+            # Authentication token used by Matrix Guardian and other services.
+            - name: ADMIN_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: matrix-secrets
+                  key: ADMIN_TOKEN
+            # Optional API keys for hosted providers (Groq, Gemini, HF).  Leave
+            # unset if only using Ollama.
+            - name: GROQ_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: matrix-secrets
+                  key: GROQ_API_KEY
+            - name: GROQ_MODEL
+              value: "llama3-70b-8192"
+            - name: GOOGLE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: matrix-secrets
+                  key: GOOGLE_API_KEY
+            - name: GEMINI_MODEL
+              value: "gemini-pro"
+            - name: HF_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: matrix-secrets
+                  key: HF_TOKEN
+            - name: HF_MODEL
+              value: "mistralai/Mistral-7B-Instruct-v0.2"
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: matrix-ai
+  labels:
+    app: matrix-ai
+spec:
+  type: NodePort
+  selector:
+    app: matrix-ai
+  ports:
+    - port: 7860
+      targetPort: 7860
+      nodePort: 30083
+      protocol: TCP
