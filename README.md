@@ -109,6 +109,124 @@ Characteristics:
 
 ---
 
+## 🛠️ Client Tools & SDKs
+
+Once you've deployed the Agent-Matrix infrastructure, you'll interact with it using two complementary tools:
+
+### Matrix CLI — Client-Side Tool
+
+**[Matrix CLI](https://github.com/agent-matrix/matrix-cli)** is the client-side command-line interface for discovering, installing, and running agents, tools, and MCP servers.
+
+**Use Matrix CLI for:**
+- 🔍 **Discovery**: Search and explore available agents, tools, and MCP servers
+- 📦 **Installation**: Install and manage packages locally
+- ▶️ **Execution**: Run MCP servers and agents locally or attach to remote services
+- 🔧 **Interaction**: Probe and invoke tools via CLI commands
+- 📊 **Process Management**: Monitor running services with `matrix ps`
+
+**Installation:**
+```bash
+# Recommended: Install with pipx for isolation
+pipx install matrix-cli
+
+# Or with pip
+pip install matrix-cli
+```
+
+**Quick Usage:**
+```bash
+# Search for MCP servers
+matrix search "hello" --type mcp_server
+
+# Install an MCP server
+matrix install hello-sse-server --alias hello-sse
+
+# Run the server
+matrix run hello-sse --port 6288
+
+# Interact with tools
+matrix do hello-sse "Your question"
+
+# View running services
+matrix ps
+
+# Stop a service
+matrix stop hello-sse
+```
+
+### Matrix System SDK — Infrastructure Management
+
+**[Matrix System SDK](https://github.com/agent-matrix/matrix-system)** is a production-ready Python SDK and CLI for monitoring and managing your deployed infrastructure services.
+
+**Use Matrix System for:**
+- 💚 **Health Monitoring**: Check service health with scoring and status assessment
+- 📋 **Event Tracking**: Monitor plan creation and system actions
+- ✅ **Proposal Management**: Handle risk assessment for automated decisions
+- 🔐 **Governance**: Manage approvals and policy enforcement
+- 🐍 **Python Integration**: Embed Matrix operations in Python applications
+
+**Installation:**
+```bash
+# Recommended: Install with uv
+uv pip install matrix-system
+
+# Or with pip
+pip install matrix-system
+```
+
+**Quick Usage:**
+```bash
+# Configure environment variables
+export MATRIX_HUB_URL="http://your-matrix-hub-url"
+export MATRIX_AI_URL="http://your-matrix-ai-url"
+export MATRIX_GUARDIAN_URL="http://your-matrix-guardian-url"
+export ADMIN_TOKEN="your-admin-token"
+
+# Check health of all services
+matrix health check --all
+
+# List registered agents
+matrix agent list
+
+# Register a new agent
+matrix agent register --name my-agent --type general
+```
+
+**Python SDK Usage:**
+```python
+from matrix_system import MatrixHub, MatrixAI, MatrixGuardian
+
+# Initialize clients
+hub = MatrixHub()
+ai = MatrixAI()
+guardian = MatrixGuardian()
+
+# Register an agent
+agent = hub.register_agent(name="my-agent", agent_type="general")
+
+# Check health
+health = hub.health_check()
+print(f"Hub health score: {health.score}")
+
+# Track events
+events = hub.get_events(limit=10)
+```
+
+### When to Use Which Tool?
+
+| Task | Tool |
+|------|------|
+| Search and install MCP servers/agents | **Matrix CLI** |
+| Run local MCP servers | **Matrix CLI** |
+| Monitor infrastructure health | **Matrix System** |
+| Manage governance proposals | **Matrix System** |
+| Track system events | **Matrix System** |
+| Python automation scripts | **Matrix System SDK** |
+
+**For comprehensive documentation, see:** [docs/client-tools.md](docs/client-tools.md)
+
+---
+
 ## 🚀 Quickstart
 
 **Get Agent-Matrix running in 15-30 minutes:**

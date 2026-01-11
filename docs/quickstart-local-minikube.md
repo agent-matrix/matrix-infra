@@ -80,15 +80,25 @@ infrastructure.
 
    These ports are configurable in the `apps/*/deployment.yaml` files.
 
-6. **Configure your CLI/SDK**.  When using `matrix-cli` or `matrix-sdk` in
-   development you will need to point them at your local services.  For
+6. **Configure the Matrix System SDK/CLI**.  When using the `matrix-system` SDK
+   in development you will need to point it at your local services.  For
    example:
 
    ```bash
+   # Install the SDK
+   pip install matrix-system
+
+   # Configure environment
    export MATRIX_HUB_URL="http://$(minikube ip):30081"
    export MATRIX_AI_URL="http://$(minikube ip):30083"
    export MATRIX_GUARDIAN_URL="http://$(minikube ip):30082"
+   export ADMIN_TOKEN="your-admin-token"
+
+   # Test connectivity
+   matrix health check --all
    ```
+
+   **See:** [Matrix System SDK Documentation](matrix-system-sdk.md) for complete usage guide.
 
 ## LLM Provider configuration
 

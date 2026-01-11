@@ -246,25 +246,71 @@ nano platforms/oracle/compose/.env
 # Then: docker compose restart
 ```
 
-### 2. Install Matrix CLI
+### 2. Install Client Tools
+
+The Agent-Matrix ecosystem provides two complementary command-line tools:
+
+#### Matrix CLI (Client-Side Operations)
+
+For discovering, installing, and running MCP servers and agents:
 
 ```bash
-# Install matrix-cli for interacting with the infrastructure
+# Recommended: Install with pipx for isolation
+pipx install matrix-cli
+
+# Or with pip
 pip install matrix-cli
 
-# Configure CLI
+# Search for available MCP servers
+matrix search "hello" --type mcp_server
+
+# Install and run an MCP server
+matrix install hello-sse-server --alias hello-sse
+matrix run hello-sse --port 6288
+
+# View running services
+matrix ps
+```
+
+#### Matrix System SDK (Infrastructure Management)
+
+For monitoring infrastructure health and managing governance:
+
+```bash
+# Recommended: Install with uv
+uv pip install matrix-system
+
+# Or with pip
+pip install matrix-system
+
+# Configure environment
 export MATRIX_HUB_URL="http://YOUR_MATRIX_HUB_URL"
+export MATRIX_AI_URL="http://YOUR_MATRIX_AI_URL"
+export MATRIX_GUARDIAN_URL="http://YOUR_MATRIX_GUARDIAN_URL"
 export ADMIN_TOKEN="your-admin-token"
 
-# Test
-matrix-cli agent list
+# Check infrastructure health
+matrix health check --all
+
+# List registered agents
+matrix agent list
 ```
+
+**For detailed documentation, see:** [docs/client-tools.md](docs/client-tools.md)
 
 ### 3. Register Your First Agent
 
 ```bash
-# Using matrix-cli
-matrix-cli agent register --name my-agent --type general
+# Using matrix-system SDK
+matrix agent register --name my-agent --type general
+
+# Or via Python SDK
+python -c "
+from matrix_system import MatrixHub
+hub = MatrixHub()
+agent = hub.register_agent(name='my-agent', agent_type='general')
+print(f'Registered agent: {agent}')
+"
 
 # Or via API
 curl -X POST http://YOUR_MATRIX_HUB_URL/api/agents \

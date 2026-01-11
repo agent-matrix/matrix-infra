@@ -32,4 +32,6 @@ nav:
       - Oracle VM: quickstart-oracle.md
       - LLM providers: llm-providers.md
       - Operations: deployment.md
+  - Client Tools:
+      - SDK & CLI Guide: client-tools.md
   - Roadmap: roadmap.md
