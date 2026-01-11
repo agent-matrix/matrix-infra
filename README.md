@@ -109,32 +109,41 @@ Characteristics:
 
 ---
 
-## Quickstart
+## 🚀 Quickstart
 
-### Local (MiniKube)
+**Get Agent-Matrix running in 15-30 minutes:**
 
-Prerequisites:
-
-- Docker
-- kubectl
-- minikube
-- kustomize
-
-Deploy the full stack locally:
+### Production-Ready Deployment (Recommended)
 
 ```bash
+# 1. Check your system
+make preflight
+
+# 2. Deploy (choose one)
+make deploy-minikube        # Local development (MiniKube)
+make deploy-docker-compose  # Cloud VM (Docker Compose)
+
+# 3. Verify
+make health-check
+```
+
+### Alternative: Legacy Deployment Methods
+
+```bash
+# MiniKube (legacy)
 make install-minikube
-````
 
-See: `docs/quickstart-local-minikube.md`
-
-### Oracle VM (Docker Compose)
-
-```bash
+# Docker Compose (legacy)
 make install-oracle
 ```
 
-See: `docs/quickstart-oracle.md`
+**📖 For detailed step-by-step instructions, see: [QUICKSTART.md](QUICKSTART.md)**
+
+**Documentation:**
+- **Quick Start**: [QUICKSTART.md](QUICKSTART.md) - Get running in 15-30 minutes
+- **MiniKube**: `docs/quickstart-local-minikube.md` - Detailed local deployment
+- **Cloud VM**: `docs/quickstart-oracle.md` - Detailed cloud deployment
+- **Scripts**: [scripts/README.md](scripts/README.md) - Script documentation
 
 ---
 
@@ -142,10 +151,20 @@ See: `docs/quickstart-oracle.md`
 
 Matrix-Infra provides structured workflows for operators and contributors:
 
+**Production Workflows (Recommended):**
+* `make preflight` — validate system requirements before deployment
+* `make deploy-minikube` — one-command deployment to MiniKube with validation
+* `make deploy-docker-compose` — one-command deployment to Docker Compose with validation
+* `make health-check` — verify deployment and service health
+* `make generate-secrets` — generate production-ready secure secrets
+
+**Legacy Workflows:**
 * `make help` — discover available commands and workflows
 * `make build` — build all Agent-Matrix container images locally
 * `scripts/install.sh` — interactive installer (local vs cloud)
 * `scripts/setup_minikube.sh` — dependency checks and local setup
+
+**See:** [scripts/README.md](scripts/README.md) for detailed script documentation
 
 The goal is to reduce ambiguity and make system behavior reproducible.
 

@@ -5,7 +5,6 @@ kind: Kustomization
 namespace: matrix
 
 resources:
-  - matrix-secrets.yaml
   # Core services
   - ../../apps/matrix-hub/deployment.yaml
   - ../../apps/matrix-ai/deployment.yaml
