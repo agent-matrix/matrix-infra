@@ -29,7 +29,7 @@ endef
 export LINT_SCRIPT
 # ------------------------------------------
 
-.PHONY: help build install install-minikube install-oracle docs-serve docs-build lint
+.PHONY: help build install install-minikube install-oracle deploy deploy-minikube deploy-docker-compose preflight health-check generate-secrets docs-serve docs-build lint
 
 help: ## Show a Matrix-style command reference
 	@echo "\n🧬  Matrix-Infra — Alive System Infrastructure"
@@ -39,10 +39,15 @@ help: ## Show a Matrix-style command reference
 	@echo "Note:    This repository is not a commercial product; it is an open reference implementation."
 	@echo "\nCommands:"
 	@awk 'BEGIN {FS = ":.*##"} /^[a-zA-Z0-9_.-]+:.*##/ {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
-	@echo "\nExamples:"
-	@echo "  make build                 # build all service images locally"
-	@echo "  make install-minikube      # deploy the full stack to MiniKube"
-	@echo "  make docs-serve            # serve docs locally (MkDocs)"
+	@echo "\nQuick Start:"
+	@echo "  make preflight             # check system requirements"
+	@echo "  make deploy-minikube       # deploy to MiniKube (recommended for local dev)"
+	@echo "  make health-check          # verify deployment"
+	@echo ""
+	@echo "Examples:"
+	@echo "  make generate-secrets      # generate production secrets"
+	@echo "  make deploy-docker-compose # deploy to Docker Compose"
+	@echo "  make docs-serve            # serve docs locally"
 	@echo ""
 
 build: ## Build all container images needed by the platform (local Docker)
@@ -56,6 +61,24 @@ install-minikube: ## Validate deps, start MiniKube if needed, deploy manifests
 
 install-oracle: ## Deploy services on an Oracle VM (Docker Compose)
 	@cd platforms/oracle/compose && docker compose pull && docker compose up -d
+
+deploy: ## One-command deployment (interactive, choose platform)
+	@bash scripts/deploy.sh
+
+deploy-minikube: ## One-command deployment to MiniKube with checks
+	@bash scripts/deploy.sh minikube
+
+deploy-docker-compose: ## One-command deployment to Docker Compose with checks
+	@bash scripts/deploy.sh docker-compose
+
+preflight: ## Run pre-flight environment checks
+	@bash scripts/preflight-check.sh
+
+health-check: ## Run health checks on deployed services
+	@bash scripts/health-check.sh
+
+generate-secrets: ## Generate production-ready secrets
+	@bash scripts/generate-secrets.sh secrets.env
 
 docs-serve: ## Serve documentation locally (requires mkdocs)
 	@mkdocs serve
