@@ -20,9 +20,21 @@ spec:
           ports:
             - containerPort: 3000
           env:
-            # URL of your Matrix Hub API
-            - name: NEXT_PUBLIC_MATRiXHUB_API_URL
+            # URL of your Matrix Hub API (read-only calls may use this in the browser).
+            # Fix typo: NEXT_PUBLIC_MATRIXHUB_API_URL (previously had a lowercase 'i').
+            - name: NEXT_PUBLIC_MATRIXHUB_API_URL
               value: "http://matrix-hub:8000"
+
+            # Server-side admin proxy settings (required after Matrix-Hub hardening).
+            # These MUST NOT be NEXT_PUBLIC_ values.
+            - name: HUB_URL
+              value: "http://matrix-hub:8000"
+            - name: HUB_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: matrix-secrets
+                  key: ADMIN_TOKEN
+
             # Authentication secret for NextAuth (if used).
             - name: NEXTAUTH_SECRET
               valueFrom:

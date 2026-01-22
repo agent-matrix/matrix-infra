@@ -20,6 +20,23 @@ spec:
           ports:
             - containerPort: 8000
           env:
+            # Keep dev defaults for minikube; production overlays should set MATRIX_ENV=production.
+            # With the hardened Matrix-Hub, admin endpoints require API_TOKEN in production.
+            - name: MATRIX_ENV
+              value: "dev"
+
+            # Operator/admin token for protected endpoints (install/remotes/ingest/sync).
+            # Reuse the shared ADMIN_TOKEN secret for simplicity in this reference stack.
+            - name: API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: matrix-secrets
+                  key: ADMIN_TOKEN
+
+            # Optional: safe defaults for browser integrations (CLI/SDK unaffected).
+            - name: CORS_ALLOW_CREDENTIALS
+              value: "false"
+
             # Use SQLite for development; override via secret to point at Postgres.
             - name: DATABASE_URL
               value: "sqlite:///matrixhub.db"
